@@ -150,9 +150,12 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 glass-card p-6 rounded-3xl shadow-sm">
                     <div>
                         <h2 class="text-xl font-bold text-slate-800">Input Absensi Harian</h2>
-                        <p class="text-xs text-slate-500 font-medium">Tentukan kelas dan tanggal untuk melakukan pencatatan presensi.</p>
+                        <p class="text-xs text-slate-500 font-medium">Tentukan kelas, tanggal, atau tandai hari libur sekolah.</p>
                     </div>
-                    <div class="flex flex-wrap gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="setAllAttendance('L')" class="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-200 rounded-2xl text-xs font-bold transition-all">
+                            <i class="fa-solid fa-umbrella-beach mr-1.5"></i>Tandai Semua Libur
+                        </button>
                         <select id="attendanceClass" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="loadAttendanceForm()">
                             <option value="Kelas 1">Kelas 1</option>
                             <option value="Kelas 2">Kelas 2</option>
@@ -258,7 +261,6 @@
                         <p class="text-xs text-slate-500 font-medium">Tambah, edit, hapus, download format, atau import data murid kelas Anda.</p>
                     </div>
                     <div class="flex flex-wrap gap-2.5">
-                        <!-- Hidden File Input for CSV Import -->
                         <input type="file" id="csvFileInput" accept=".csv, .txt" class="hidden" onchange="importStudents(event)">
                         <button onclick="downloadCsvFormat()" class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl text-sm font-bold shadow-md shadow-amber-200 transition-all">
                             <i class="fa-solid fa-download mr-1.5"></i>Format CSV
@@ -293,7 +295,7 @@
                 </div>
             </section>
 
-            <!-- 5. REKAP ABSENSI (TERPISAH) -->
+            <!-- 5. REKAP ABSENSI -->
             <section id="page-rekap-absensi" class="page-content space-y-6 hidden">
                 <div class="glass-card p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 no-print">
                     <div class="flex flex-wrap items-center gap-3">
@@ -405,7 +407,7 @@
                 </div>
             </section>
 
-            <!-- 6. REKAP NILAI HARIAN (TERPISAH) -->
+            <!-- 6. REKAP NILAI HARIAN -->
             <section id="page-rekap-nilai" class="page-content space-y-6 hidden">
                 <div class="glass-card p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 no-print">
                     <div class="flex flex-wrap items-center gap-3">
@@ -724,7 +726,6 @@
             if(pageId === 'nilai') loadGradeForm();
         }
 
-        // Download CSV Format Template
         function downloadCsvFormat() {
             const csvContent = "NISN/NIS,Nama Lengkap,Kelas,Jenis Kelamin\n1001,Ahmad Fauzi,Kelas 6,L\n1002,Siti Nurhaliza,Kelas 6,P";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -737,7 +738,6 @@
             document.body.removeChild(a);
         }
 
-        // CSV Student Import Handler
         function importStudents(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -898,10 +898,23 @@
                                     <input type="radio" name="att_${s.id}" value="A" ${status === 'A' ? 'checked' : ''} class="peer sr-only">
                                     <span class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-500 peer-checked:bg-rose-500 peer-checked:text-white transition-all block shadow-sm">Alpa</span>
                                 </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="att_${s.id}" value="L" ${status === 'L' ? 'checked' : ''} class="peer sr-only">
+                                    <span class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-500 peer-checked:bg-purple-600 peer-checked:text-white transition-all block shadow-sm">Libur</span>
+                                </label>
                             </div>
                         </td>
                     </tr>
                 `;
+            });
+        }
+
+        function setAllAttendance(status) {
+            const selectedClass = document.getElementById('attendanceClass').value;
+            const filteredStudents = students.filter(s => (s.classGrade || 'Kelas 6') === selectedClass);
+            filteredStudents.forEach(s => {
+                const radio = document.querySelector(`input[name="att_${s.id}"][value="${status}"]`);
+                if (radio) radio.checked = true;
             });
         }
 
@@ -1067,7 +1080,6 @@
             });
         }
 
-        // Render Rekap Absensi Bulanan
         function renderRekapAbsen() {
             const monthNum = document.getElementById('selectMonthAbsen').value;
             const year = document.getElementById('selectYearAbsen').value;
@@ -1136,6 +1148,7 @@
                         else if (cellCode === 'S') { sCount++; bgStyle = 'text-sky-700 font-semibold bg-sky-50'; }
                         else if (cellCode === 'I') { iCount++; bgStyle = 'text-amber-700 font-semibold bg-amber-50'; }
                         else if (cellCode === 'A') { aCount++; bgStyle = 'text-rose-700 font-bold bg-rose-100'; }
+                        else if (cellCode === 'L') { bgStyle = 'text-purple-700 font-bold bg-purple-100'; }
                     } else {
                         const dayOfWeek = new Date(year, parseInt(monthNum) - 1, d).getDay();
                         if (dayOfWeek === 0) {
@@ -1161,7 +1174,6 @@
             });
         }
 
-        // Render Rekap Nilai Harian (Terpisah)
         function renderRekapNilai() {
             const monthNum = document.getElementById('selectMonthNilai').value;
             const year = document.getElementById('selectYearNilai').value;
@@ -1201,7 +1213,7 @@
                 let scoreCount = 0;
 
                 Object.keys(gradeRecords).forEach(gKey => {
-                    const parts = gKey.split('_'); // [class, subject, date, category]
+                    const parts = gKey.split('_');
                     const gClass = parts[0];
                     const gSubject = parts[1];
                     const gDate = parts[2];
